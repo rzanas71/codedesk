@@ -4,7 +4,7 @@
   "private": true,
   "description": "School-configured in-browser code playground — editor, preview, console. Zero setup.",
   "author": "CodeDesk",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",

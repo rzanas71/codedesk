@@ -8,7 +8,7 @@ A configured code playground for the browser
 
 - **Editor + live preview + console** — the playground loop, nothing else in v1
 - **Client-side runs** — esbuild/sass/pyodide in the browser; no server execution
-- **Edit history** — autosaved timestamped snapshots + activity (first/last edit, runs); restore any version
+- **Edit history** — git-style checkpoints on Run + after ~1.5s of quiet; restore any version with timestamps
 - **Six presets** — HTML, Bootstrap, jQuery, SCSS, React, Python
 - **Drafts in localStorage** — reload and keep working (no account)
 - **Run shortcut** — `Mod/Ctrl+Enter`; run count and last duration in the toolbar
@@ -47,8 +47,8 @@ Open the URL Vite prints (usually `http://localhost:5173/`).
 Push a version tag to build and publish installers on GitHub Releases:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 The `Release` workflow attaches:

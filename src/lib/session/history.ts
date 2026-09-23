@@ -6,12 +6,13 @@ export const ACTIVITY_KEY = "codedesk_activity";
 const HISTORY_SCHEMA = 1;
 const ACTIVITY_SCHEMA = 1;
 
-/** Save a snapshot after this much quiet time following an edit. */
-export const SNAPSHOT_IDLE_MS = 45_000;
+/**
+ * Save a snapshot after this much quiet time following an edit — short enough
+ * that a delete-and-rewrite in the same second still leaves both versions.
+ */
+export const SNAPSHOT_IDLE_MS = 1_500;
 /** Hard cap so a long lab session cannot blow the localStorage quota. */
-export const MAX_SNAPSHOTS = 50;
-/** Ignore snapshot requests that land closer than this to the last save. */
-export const MIN_SNAPSHOT_GAP_MS = 20_000;
+export const MAX_SNAPSHOTS = 120;
 
 export interface HistorySnapshot {
   id: string;
@@ -232,6 +233,19 @@ export function scheduleSnapshot(
   idleTimer = setTimeout(commitSnapshot, SNAPSHOT_IDLE_MS);
 }
 
+/** Git-style checkpoint: commit this content immediately if it changed. */
+export function snapshotNow(
+  preset: PresetKey,
+  files: Record<string, string>,
+): void {
+  if (idleTimer !== null) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+  dirty = { preset, files };
+  commitSnapshot();
+}
+
 function clearIdleTimer(): void {
   if (idleTimer !== null) {
     clearTimeout(idleTimer);
@@ -247,7 +261,7 @@ function scheduleFlush(): void {
   }, SNAPSHOT_IDLE_MS);
 }
 
-/** Append the pending snapshot (if any) and persist activity. */
+/** Append the pending snapshot (if content changed) and persist activity. */
 export function commitSnapshot(): void {
   clearIdleTimer();
   saveActivity(activity);
@@ -260,14 +274,9 @@ export function commitSnapshot(): void {
   const last = snapshots[0];
   const now = Date.now();
 
+  // Content equality is the only gate — never drop a distinct version
+  // because of a time window (that lost intermediate edits before).
   if (last && sameFiles(last.files, files)) return;
-  if (last && now - last.savedAt < MIN_SNAPSHOT_GAP_MS) {
-    // Too soon — keep the pending state so a later idle still saves it.
-    dirty = { preset, files };
-    if (idleTimer !== null) clearTimeout(idleTimer);
-    idleTimer = setTimeout(commitSnapshot, MIN_SNAPSHOT_GAP_MS);
-    return;
-  }
 
   snapshots.unshift({
     id: makeId(now),

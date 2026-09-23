@@ -11,11 +11,13 @@ import {
 } from "./lib/session/persistence";
 import {
   clearHistory,
+  commitSnapshot,
   getActivity,
   getHistory,
   recordEdit,
   recordRun,
   scheduleSnapshot,
+  snapshotNow,
   type ActivityRecord,
   type HistorySnapshot,
 } from "./lib/session/history";
@@ -128,6 +130,7 @@ export const useSandbox = create<SandboxState>((set, get) => ({
   selectPreset: (key) => {
     // Settle any debounced write for the *outgoing* preset before swapping.
     flushDraftSave();
+    commitSnapshot();
     saveActivePreset(key);
     const files = filesWithDraft(key);
     set({
@@ -232,12 +235,16 @@ export const useSandbox = create<SandboxState>((set, get) => ({
     const preset = presets[activePreset];
 
     runStartedAt = performance.now();
+    // Checkpoint the code being run (git-style) so a later delete cannot
+    // erase the version the student just executed.
+    snapshotNow(activePreset, files);
     recordRun();
     set((s) => ({
       logs: [],
       logSeq: 0,
       runCount: s.runCount + 1,
       activity: getActivity(),
+      historySnapshots: getHistory(),
       // Python executes (and loads its runtime) inside the worker — there is
       // no parent-side compile step to surface as its own phase.
       runPhase:

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { commitSnapshot } from "./lib/session/history";
 import {
   flushDraftSave,
   loadActivePreset,
@@ -205,6 +206,31 @@ describe("sandbox store", () => {
     useSandbox.getState().appendLog("log", "old");
     await useSandbox.getState().run();
     expect(useSandbox.getState().logs).toHaveLength(0);
+  });
+
+  it("run() checkpoints the executed code into history", async () => {
+    useSandbox.getState().selectPreset("python");
+    useSandbox.getState().setFile("main.py", "print('checkpoint')");
+    await useSandbox.getState().run();
+
+    const snaps = useSandbox.getState().historySnapshots;
+    expect(snaps.length).toBeGreaterThan(0);
+    expect(snaps[0].files["main.py"]).toBe("print('checkpoint')");
+  });
+
+  it("rewrite after run keeps both versions in history", async () => {
+    useSandbox.getState().selectPreset("python");
+    useSandbox.getState().setFile("main.py", "print('first')");
+    await useSandbox.getState().run();
+    useSandbox.getState().setFile("main.py", "print('second')");
+    commitSnapshot();
+    useSandbox.getState().refreshHistory();
+
+    const bodies = useSandbox
+      .getState()
+      .historySnapshots.map((s) => s.files["main.py"]);
+    expect(bodies).toContain("print('first')");
+    expect(bodies).toContain("print('second')");
   });
 
   it("restoreSnapshot replaces files, bumps historyEpoch, closes panel", () => {

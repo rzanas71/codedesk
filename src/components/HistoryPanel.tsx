@@ -105,8 +105,8 @@ export function HistoryPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto">
           {snapshots.length === 0 ? (
             <p className="px-3 py-4 text-xs text-app-faint">
-              No snapshots yet. A version is saved after ~45s of quiet
-              following an edit.
+              No snapshots yet. Versions save ~1.5s after you pause typing,
+              and immediately when you press Run.
             </p>
           ) : (
             <ul>

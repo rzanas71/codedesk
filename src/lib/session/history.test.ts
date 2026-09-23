@@ -14,8 +14,10 @@ import {
   recordRun,
   replaceHistory,
   resetHistoryForTests,
+  SNAPSHOT_IDLE_MS,
   saveHistory,
   scheduleSnapshot,
+  snapshotNow,
 } from "@/lib/session/history";
 
 describe("history snapshots", () => {
@@ -47,8 +49,42 @@ describe("history snapshots", () => {
   test("idle timer fires a snapshot without an explicit commit", () => {
     scheduleSnapshot("html", { "index.html": "<p>hi</p>" });
     expect(getHistory()).toHaveLength(0);
-    vi.advanceTimersByTime(45_000);
+    vi.advanceTimersByTime(SNAPSHOT_IDLE_MS);
     expect(getHistory()).toHaveLength(1);
+  });
+
+  test("snapshotNow commits immediately (Run checkpoint)", () => {
+    scheduleSnapshot("python", { "main.py": "print('a')" });
+    snapshotNow("python", { "main.py": "print('a')" });
+    expect(getHistory()).toHaveLength(1);
+    expect(getHistory()[0].files["main.py"]).toBe("print('a')");
+  });
+
+  test("rapid distinct versions are all kept (no time-window drops)", () => {
+    // Student runs print A, deletes it, writes print B — same second.
+    snapshotNow("python", { "main.py": "print('a')" });
+    snapshotNow("python", { "main.py": "print('b')" });
+    scheduleSnapshot("python", { "main.py": "print('c')" });
+    commitSnapshot();
+
+    const history = getHistory();
+    expect(history).toHaveLength(3);
+    expect(history.map((h) => h.files["main.py"])).toEqual([
+      "print('c')",
+      "print('b')",
+      "print('a')",
+    ]);
+  });
+
+  test("run-style checkpoint keeps the first print after a rewrite", () => {
+    snapshotNow("python", { "main.py": "print('first')" });
+    // Rewrite without waiting — still a new commit because content changed.
+    scheduleSnapshot("python", { "main.py": "print('second')" });
+    commitSnapshot();
+
+    expect(getHistory()).toHaveLength(2);
+    expect(getHistory()[1].files["main.py"]).toBe("print('first')");
+    expect(getHistory()[0].files["main.py"]).toBe("print('second')");
   });
 
   test("identical files do not create a duplicate snapshot", () => {

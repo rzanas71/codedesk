@@ -1,6 +1,6 @@
 {
   "name": "codedesk",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "School-configured in-browser code playground — editor, preview, console. Zero setup.",
   "author": "CodeDesk",

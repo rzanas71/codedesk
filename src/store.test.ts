@@ -218,6 +218,30 @@ describe("sandbox store", () => {
     expect(snaps[0].files["main.py"]).toBe("print('checkpoint')");
   });
 
+  it("run settle checkpoints again (files after the run finished)", async () => {
+    useSandbox.getState().selectPreset("python");
+    useSandbox.getState().setFile("main.py", "print('at-click')");
+    // Mock the runner to edit during the run — settle must pick this up.
+    const { runPython } = await import("./runners/pyodideRunner");
+    vi.mocked(runPython).mockImplementationOnce(
+      async (
+        _code: string,
+        handlers: { onOutput: (level: "log" | "error", text: string) => void },
+      ) => {
+        handlers.onOutput("log", "running");
+        useSandbox.getState().setFile("main.py", "print('after-run')");
+      },
+    );
+
+    await useSandbox.getState().run();
+
+    const bodies = useSandbox
+      .getState()
+      .historySnapshots.map((s) => s.files["main.py"]);
+    expect(bodies).toContain("print('at-click')");
+    expect(bodies).toContain("print('after-run')");
+  });
+
   it("rewrite after run keeps both versions in history", async () => {
     useSandbox.getState().selectPreset("python");
     useSandbox.getState().setFile("main.py", "print('first')");

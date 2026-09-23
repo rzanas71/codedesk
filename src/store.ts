@@ -174,7 +174,8 @@ export const useSandbox = create<SandboxState>((set, get) => ({
   toggleConsole: (open) =>
     set((s) => ({ consoleOpen: open ?? !s.consoleOpen })),
 
-  setRunPhase: (phase) =>
+  setRunPhase: (phase) => {
+    const before = get().runPhase;
     set((s) => {
       const patch: Partial<SandboxState> = { runPhase: phase };
       if (phase === "idle" && s.runPhase === "running") {
@@ -185,7 +186,19 @@ export const useSandbox = create<SandboxState>((set, get) => ({
         patch.lastRunMs = sinceRunStart();
       }
       return patch;
-    }),
+    });
+
+    // Checkpoint again when the program settles — captures anything edited
+    // while it was compiling/running (Run-click already saved the start).
+    const settled =
+      (phase === "idle" && before === "running") ||
+      (phase === "error" && before !== "error");
+    if (settled) {
+      const { activePreset, files } = get();
+      snapshotNow(activePreset, files);
+      set({ historySnapshots: getHistory(), activity: getActivity() });
+    }
+  },
 
   setSrcdoc: (html) => set({ srcdoc: html }),
 

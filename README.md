@@ -47,8 +47,8 @@ Open the URL Vite prints (usually `http://localhost:5173/`).
 Push a version tag to build and publish installers on GitHub Releases:
 
 ```bash
-git tag v0.2.1
-git push origin v0.2.1
+git tag v0.2.2
+git push origin v0.2.2
 ```
 
 The `Release` workflow attaches:

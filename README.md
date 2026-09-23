@@ -75,4 +75,4 @@ No environment variables. Static-friendly; runs are entirely client-side.
 
 ## License
 
-PolyForm Noncommercial 1.0.0 — free for personal, educational, and other noncommercial use. No selling or other commercial use without permission — see [LICENSE](./LICENSE).
+PolyForm Noncommercial 1.0.0 — free for personal, educational, and other noncommercial use. No selling or other commercial use — see [LICENSE](./LICENSE).

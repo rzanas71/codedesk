@@ -1,20 +1,16 @@
 # CodeDesk
 
-A school-configured code playground for the browser. Write React JSX, run it, read the preview and console — zero setup on locked-down Chromebooks.
+A configured code playground for the browser
 
-## Why
 
-Schools teaching React need a ready environment students can open and use without installs, accounts, or admin rights. CodeDesk is that instrument: six presets ship today (HTML, Bootstrap, jQuery, SCSS, React, Python) behind a language-adapter seam so each curriculum language is a plug-in, not a rewrite.
 
 ## Features
 
 - **Editor + live preview + console** — the playground loop, nothing else in v1
 - **Client-side runs** — esbuild/sass/pyodide in the browser; no server execution
-- **Resizable output** — drag the split between editor and Output
 - **Six presets** — HTML, Bootstrap, jQuery, SCSS, React, Python
 - **Drafts in localStorage** — reload and keep working (no account)
 - **Run shortcut** — `Mod/Ctrl+Enter`; run count and last duration in the toolbar
-- **GitHub** — source and releases at [rzanas71/codedesk](https://github.com/rzanas71/codedesk)
 
 ## Stack
 
@@ -76,10 +72,6 @@ npx vercel
 ```
 
 No environment variables. Static-friendly; runs are entirely client-side.
-
-## Scope (v1)
-
-Playground only: no auth, no grading, no exercises, no server-side language runtimes. Future languages may need WASM or other adapters behind the same seam.
 
 ## License
 

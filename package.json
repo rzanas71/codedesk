@@ -53,6 +53,7 @@
     "appId": "com.codedesk.app",
     "productName": "CodeDesk",
     "copyright": "Copyright © CodeDesk",
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },

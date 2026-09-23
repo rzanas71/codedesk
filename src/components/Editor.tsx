@@ -23,6 +23,7 @@ export function Editor() {
   const files = useSandbox((s) => s.files);
   const activeFile = useSandbox((s) => s.activeFile);
   const activePreset = useSandbox((s) => s.activePreset);
+  const historyEpoch = useSandbox((s) => s.historyEpoch);
   const setActiveFile = useSandbox((s) => s.setActiveFile);
   const setFile = useSandbox((s) => s.setFile);
 
@@ -94,7 +95,9 @@ export function Editor() {
         className="min-h-0 flex-1"
       >
         <MonacoEditor
-          key={activePreset}
+          // historyEpoch bumps on snapshot restore — remount so defaultValue
+          // reloads the restored buffers (same-preset restore otherwise no-ops).
+          key={`${activePreset}:${historyEpoch}`}
           // No `value` prop: the wrapper's value-sync effect can race fast
           // typing and full-document-replace with a stale string, corrupting
           // the token stream ("Token length and text length do not match").

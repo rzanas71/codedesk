@@ -206,4 +206,44 @@ describe("sandbox store", () => {
     await useSandbox.getState().run();
     expect(useSandbox.getState().logs).toHaveLength(0);
   });
+
+  it("restoreSnapshot replaces files, bumps historyEpoch, closes panel", () => {
+    useSandbox.getState().selectPreset("react");
+    const before = useSandbox.getState().historyEpoch;
+    useSandbox.getState().toggleHistory(true);
+
+    useSandbox.getState().restoreSnapshot({
+      id: "s1",
+      preset: "react",
+      files: { "App.jsx": "// restored", "index.html": "<html></html>" },
+      savedAt: Date.now(),
+      chars: 12,
+    });
+
+    const s = useSandbox.getState();
+    expect(s.files["App.jsx"]).toBe("// restored");
+    expect(s.activeFile).toBe("App.jsx");
+    expect(s.historyEpoch).toBe(before + 1);
+    expect(s.historyOpen).toBe(false);
+    flushDraftSave();
+    expect(loadDraft("react")?.["App.jsx"]).toBe("// restored");
+  });
+
+  it("restoreSnapshot can switch presets to the snapshot's preset", () => {
+    useSandbox.getState().selectPreset("html");
+    useSandbox.getState().restoreSnapshot({
+      id: "s2",
+      preset: "python",
+      files: { "main.py": "print('back')" },
+      savedAt: Date.now(),
+      chars: 12,
+    });
+    expect(useSandbox.getState().activePreset).toBe("python");
+    expect(useSandbox.getState().files["main.py"]).toBe("print('back')");
+  });
+
+  it("clearAllHistory empties snapshots", () => {
+    useSandbox.getState().clearAllHistory();
+    expect(useSandbox.getState().historySnapshots).toEqual([]);
+  });
 });

@@ -9,6 +9,16 @@ import {
   saveActivePreset,
   scheduleDraftSave,
 } from "./lib/session/persistence";
+import {
+  clearHistory,
+  getActivity,
+  getHistory,
+  recordEdit,
+  recordRun,
+  scheduleSnapshot,
+  type ActivityRecord,
+  type HistorySnapshot,
+} from "./lib/session/history";
 
 export type LogLevel = "log" | "info" | "warn" | "error";
 export type RunPhase = "idle" | "compiling" | "running" | "error";
@@ -40,6 +50,14 @@ interface SandboxState {
    */
   lastOutcome: RunOutcome;
 
+  /** Timestamped edit snapshots (newest first) for the History panel. */
+  historySnapshots: HistorySnapshot[];
+  /** Derived “did they code?” counters, flushed with snapshots. */
+  activity: ActivityRecord;
+  historyOpen: boolean;
+  /** Bumped on restore so Monaco remounts with the restored buffers. */
+  historyEpoch: number;
+
   selectPreset: (key: PresetKey) => void;
   setActiveFile: (name: string) => void;
   setFile: (name: string, content: string) => void;
@@ -49,6 +67,10 @@ interface SandboxState {
   setRunPhase: (phase: RunPhase) => void;
   setSrcdoc: (html: string | null) => void;
   run: () => Promise<void>;
+  toggleHistory: (open?: boolean) => void;
+  refreshHistory: () => void;
+  restoreSnapshot: (snapshot: HistorySnapshot) => void;
+  clearAllHistory: () => void;
 }
 
 function filesFor(key: PresetKey): Record<string, string> {
@@ -98,6 +120,10 @@ export const useSandbox = create<SandboxState>((set, get) => ({
   runCount: 0,
   lastRunMs: null,
   lastOutcome: null,
+  historySnapshots: getHistory(),
+  activity: getActivity(),
+  historyOpen: false,
+  historyEpoch: 0,
 
   selectPreset: (key) => {
     // Settle any debounced write for the *outgoing* preset before swapping.
@@ -128,6 +154,9 @@ export const useSandbox = create<SandboxState>((set, get) => ({
       runPhase: s.runPhase === "error" ? "idle" : s.runPhase,
     }));
     scheduleDraftSave(get().activePreset, files);
+    recordEdit();
+    scheduleSnapshot(get().activePreset, files);
+    set({ activity: getActivity() });
   },
 
   appendLog: (level, text) =>
@@ -157,15 +186,58 @@ export const useSandbox = create<SandboxState>((set, get) => ({
 
   setSrcdoc: (html) => set({ srcdoc: html }),
 
+  toggleHistory: (open) =>
+    set((s) => {
+      const next = open ?? !s.historyOpen;
+      if (next) {
+        return {
+          historyOpen: true,
+          historySnapshots: getHistory(),
+          activity: getActivity(),
+        };
+      }
+      return { historyOpen: false };
+    }),
+
+  refreshHistory: () =>
+    set({ historySnapshots: getHistory(), activity: getActivity() }),
+
+  restoreSnapshot: (snapshot) => {
+    flushDraftSave();
+    saveActivePreset(snapshot.preset);
+    const files = { ...snapshot.files };
+    set((s) => ({
+      activePreset: snapshot.preset,
+      files,
+      activeFile: Object.keys(files)[0] ?? "",
+      logs: [],
+      logSeq: 0,
+      runPhase: "idle",
+      srcdoc: null,
+      runId: 0,
+      lastOutcome: null,
+      historyEpoch: s.historyEpoch + 1,
+      historyOpen: false,
+    }));
+    scheduleDraftSave(snapshot.preset, files);
+  },
+
+  clearAllHistory: () => {
+    clearHistory();
+    set({ historySnapshots: [] });
+  },
+
   run: async () => {
     const { activePreset, files } = get();
     const preset = presets[activePreset];
 
     runStartedAt = performance.now();
+    recordRun();
     set((s) => ({
       logs: [],
       logSeq: 0,
       runCount: s.runCount + 1,
+      activity: getActivity(),
       // Python executes (and loads its runtime) inside the worker — there is
       // no parent-side compile step to surface as its own phase.
       runPhase:

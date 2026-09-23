@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useSandbox, type RunPhase } from "../store";
 import { SandboxView } from "./SandboxView";
+import { HistoryPanel } from "./HistoryPanel";
 import { presets, presetOrder, type PresetKey } from "../presets";
 
 const IS_MAC =
@@ -18,6 +19,8 @@ export function Playground() {
   const runPhase = useSandbox((s) => s.runPhase);
   const runCount = useSandbox((s) => s.runCount);
   const lastRunMs = useSandbox((s) => s.lastRunMs);
+  const historyOpen = useSandbox((s) => s.historyOpen);
+  const toggleHistory = useSandbox((s) => s.toggleHistory);
 
   const busy = runPhase === "compiling" || runPhase === "running";
   const runLabel = busy ? BUSY_LABEL[runPhase] : "▶ Run";
@@ -64,6 +67,27 @@ export function Playground() {
           </svg>
         </a>
 
+        <button
+          type="button"
+          onClick={() => toggleHistory()}
+          aria-expanded={historyOpen}
+          aria-haspopup="dialog"
+          title="Edit history"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-xs text-app-dim hover:bg-app-elevated hover:text-app-text"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
+            <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
+          </svg>
+          History
+        </button>
+
         <div className="flex-1" />
 
         <label className="flex items-center gap-2">
@@ -106,6 +130,7 @@ export function Playground() {
       </header>
 
       <SandboxView />
+      <HistoryPanel />
     </div>
   );
 }

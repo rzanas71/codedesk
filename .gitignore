@@ -20,9 +20,16 @@
 # production
 /build
 /dist
+/release
+*.AppImage
+*.deb
 
 # design tooling (local review artifacts)
 /.impeccable
+
+# electron
+/.electron-cache
+
 
 # misc
 .DS_Store

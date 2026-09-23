@@ -4,25 +4,26 @@ A school-configured code playground for the browser. Write React JSX, run it, re
 
 ## Why
 
-Schools teaching React need a ready environment students can open and use without installs, accounts, or admin rights. CodeDesk is that instrument: one language shipping today (JSX/React) behind a language-adapter seam so each curriculum language is a plug-in, not a rewrite.
+Schools teaching React need a ready environment students can open and use without installs, accounts, or admin rights. CodeDesk is that instrument: six presets ship today (HTML, Bootstrap, jQuery, SCSS, React, Python) behind a language-adapter seam so each curriculum language is a plug-in, not a rewrite.
 
 ## Features
 
 - **Editor + live preview + console** — the playground loop, nothing else in v1
-- **Client-side runs** — Babel transform + sandboxed iframe; no server execution
-- **Language seam** — register adapters in `src/lib/languages/`; v1 ships JSX at 486 nm
+- **Client-side runs** — esbuild/sass/pyodide in the browser; no server execution
+- **Resizable output** — drag the split between editor and Output
+- **Six presets** — HTML, Bootstrap, jQuery, SCSS, React, Python
 - **Drafts in localStorage** — reload and keep working (no account)
-- **Runs console** — `Mod/Ctrl+Enter` to run; run count and last duration on the rail
-- **Emission Line Rail UI** — state reads as line form (half / dashed / solid / sodium-double / error-double), never color alone
+- **Run shortcut** — `Mod/Ctrl+Enter`; run count and last duration in the toolbar
+- **GitHub** — source and releases at [rzanas71/codedesk](https://github.com/rzanas71/codedesk)
 
 ## Stack
 
-- [Next.js](https://nextjs.org) (App Router) + TypeScript
+- [Vite](https://vite.dev) + React + TypeScript
 - Tailwind CSS 4
-- CodeMirror 6
-- `@babel/standalone` for JSX
-- Self-hosted React UMD under `public/vendor/` for the sandbox iframe
-- Vitest + Testing Library
+- Monaco editor
+- esbuild-wasm (JSX), dart-sass, Pyodide (Python worker)
+- Vitest + Playwright smoke
+- Electron (desktop packages: Windows exe, Linux `.deb` + AppImage)
 
 ## Develop
 
@@ -31,23 +32,40 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open the URL Vite prints (usually `http://localhost:5173/`).
 
 | Script | Purpose |
 | --- | --- |
 | `npm run dev` | Dev server |
 | `npm run build` | Production build |
-| `npm run start` | Serve the production build |
+| `npm run preview` | Serve the production build |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest (unit + jsdom) |
+| `npm test` | Vitest |
+| `npm run electron` | Build web + open desktop shell |
+| `npm run dist:win` | Windows NSIS installer (`.exe`) |
+| `npm run dist:linux` | Linux `.deb` + AppImage |
 
-## Add a language
+## Desktop releases
 
-1. Implement `LanguageAdapter` from `src/lib/languages/types.ts` (`id`, `label`, `fileExtension`, `wavelengthNm`, `defaultSource`, `compile`).
-2. Register it in `Playground.tsx` via `registry.register(...)`.
-3. Give it a wavelength not already used by the seven rail ticks (405–656 nm).
+Push a version tag to build and publish installers on GitHub Releases:
 
-Compile output must be a string the sandbox can run as a classic script (or arrange your own loader inside that contract).
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The `Release` workflow attaches:
+
+- **Windows:** `CodeDesk Setup *.exe` (NSIS)
+- **Linux:** `codedesk_*.deb` and `CodeDesk-*.AppImage`
+
+## Add a preset
+
+1. Add a key and entry to `presets` in `src/presets.ts` — `label`, `cdn`, `defaultFiles`, `language`, optional `runtime` (`esbuild` | `sass` | `pyodide`).
+2. Extend `PresetKey` and `presetOrder` in that file; the header select follows them.
+3. For a non-raw-HTML runtime, wire compile in `src/store.ts` `run()` (see `esbuildRunner` / `sassRunner` / `pyodideRunner`) or extend `generateSrcdoc()` in `src/iframeGenerator.ts`.
+
+Raw HTML/JS presets run as a classic script inside the sandbox iframe. Compiled presets must produce a string that fits that contract (or arrange your own loader).
 
 ## Deploy (Vercel)
 
@@ -58,10 +76,6 @@ npx vercel
 ```
 
 No environment variables. Static-friendly; runs are entirely client-side.
-
-## Design system
-
-See [DESIGN.md](./DESIGN.md) for tokens and rules derived from the shipped UI.
 
 ## Scope (v1)
 

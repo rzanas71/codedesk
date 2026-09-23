@@ -2,6 +2,10 @@
   "name": "codedesk",
   "version": "0.1.0",
   "private": true,
+  "description": "School-configured in-browser code playground — editor, preview, console. Zero setup.",
+  "author": "CodeDesk",
+  "license": "MIT",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -9,7 +13,11 @@
     "start": "vite preview",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "electron": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist": "npm run build && electron-builder --win --linux"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -29,6 +37,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.1.1",
@@ -38,5 +48,44 @@
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
+  },
+  "build": {
+    "appId": "com.codedesk.app",
+    "productName": "CodeDesk",
+    "copyright": "Copyright © CodeDesk",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CodeDesk"
+    },
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "category": "Development",
+      "maintainer": "CodeDesk <codedesk@example.com>",
+      "synopsis": "In-browser code playground",
+      "icon": "public/icon.png"
+    },
+    "deb": {
+      "depends": ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils"]
+    }
   }
 }

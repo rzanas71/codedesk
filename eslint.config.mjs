@@ -26,4 +26,21 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: ["electron/**/*.cjs"],
+    languageOptions: {
+      globals: {
+        require: "readonly",
+        module: "writable",
+        process: "readonly",
+        console: "readonly",
+        __dirname: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "no-undef": "off",
+    },
+  },
 ]);
